@@ -58,11 +58,14 @@ export function DataTable({ columns, data, setUsers }: DataTableProps) {
 		try {
 			const emailsToBlock = getEmailsList();
 
-			const { success, message } = await blockUsers(user!.email, emailsToBlock);
+			const { success, message, status } = await blockUsers(
+				user!.email,
+				emailsToBlock
+			);
 
 			if (!success) {
 				toast({ description: message, variant: "destructive" });
-				navigate("/");
+				if (status !== 200) navigate("/");
 				return;
 			}
 
@@ -78,14 +81,14 @@ export function DataTable({ columns, data, setUsers }: DataTableProps) {
 		try {
 			const emailsToDelete = getEmailsList();
 
-			const { success, message } = await deleteUsers(
+			const { success, message, status } = await deleteUsers(
 				user!.email,
 				emailsToDelete
 			);
 
 			if (!success) {
 				toast({ description: message, variant: "destructive" });
-				navigate("/");
+				if (status !== 200) navigate("/");
 				return;
 			}
 

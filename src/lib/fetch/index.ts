@@ -27,7 +27,9 @@ export const blockUsers = async (
 		},
 	});
 
-	return response.json();
+	const { success, message } = await response.json();
+
+	return { success, message, status: response.status };
 };
 
 export const deleteUsers = async (
@@ -42,5 +44,7 @@ export const deleteUsers = async (
 		},
 	});
 
-	return response.json();
+	const { success, message } = await response.json();
+
+	return { success, message, status: response.status };
 };
