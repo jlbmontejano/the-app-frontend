@@ -1,6 +1,42 @@
-import { User } from "@/types";
+export const signUpUser = async ({
+	name,
+	email,
+	password,
+}: {
+	name: string;
+	email: string;
+	password: string;
+}) => {
+	const response = await fetch(`${import.meta.env.VITE_URL}/users`, {
+		method: "POST",
+		body: JSON.stringify({ name, email, password }),
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
 
-export const getUsers = async (userEmail: string) => {
+	return response.json();
+};
+
+export const loginUser = async ({
+	email,
+	password,
+}: {
+	email: string;
+	password: string;
+}) => {
+	const response = await fetch(`${import.meta.env.VITE_URL}/login`, {
+		method: "POST",
+		body: JSON.stringify({ email, password }),
+		headers: {
+			"Content-Type": "application/json",
+		},
+	});
+
+	return response.json();
+};
+
+export const getUsers = async () => {
 	const response = await fetch(`${import.meta.env.VITE_URL}/users`, {
 		method: "GET",
 		headers: {
@@ -8,20 +44,16 @@ export const getUsers = async (userEmail: string) => {
 		},
 	});
 
-	const { success, data, message } = await response.json();
-
-	const filteredUsers = data.filter((user: User) => user.email !== userEmail);
-
-	return { success, data: filteredUsers, message };
+	return response.json();
 };
 
-export const blockUsers = async (
+export const toggleUserStatus = async (
 	userEmail: string,
-	emailsToBlock: string[]
-) => {
+	emailsToUpdate: string[]
+): Promise<{ success: boolean; message: string; status: number }> => {
 	const response = await fetch(`${import.meta.env.VITE_URL}/users`, {
 		method: "PUT",
-		body: JSON.stringify({ userEmail, emailsToBlock }),
+		body: JSON.stringify({ userEmail, emailsToUpdate }),
 		headers: {
 			"Content-Type": "application/json",
 		},
@@ -35,7 +67,7 @@ export const blockUsers = async (
 export const deleteUsers = async (
 	userEmail: string,
 	emailsToDelete: string[]
-) => {
+): Promise<{ success: boolean; message: string; status: number }> => {
 	const response = await fetch(`${import.meta.env.VITE_URL}/users`, {
 		method: "DELETE",
 		body: JSON.stringify({ userEmail, emailsToDelete }),

@@ -10,6 +10,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuthContext } from "@/context";
 import { useToast } from "@/hooks/use-toast";
+import { signUpUser } from "@/lib/fetch";
 import { signupSchema } from "@/lib/zod-validation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -35,15 +36,7 @@ const SignupForm = ({ setFormType }: SignupFormProps) => {
 	});
 
 	async function onSubmit(values: z.infer<typeof signupSchema>) {
-		const response = await fetch(`${import.meta.env.VITE_URL}/users`, {
-			method: "POST",
-			body: JSON.stringify(values),
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
-
-		const { success, data, message } = await response.json();
+		const { success, data, message } = await signUpUser(values);
 
 		if (!success) {
 			return toast({
@@ -52,12 +45,12 @@ const SignupForm = ({ setFormType }: SignupFormProps) => {
 			});
 		}
 
-		const { name, email, status } = data;
+		const { name, email, isActive } = data;
 
 		setUser({
 			name,
 			email,
-			status,
+			isActive,
 		});
 
 		navigate("/dashboard");
