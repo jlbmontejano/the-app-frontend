@@ -18,21 +18,19 @@ import { useState } from "react";
 import { Button } from "../ui/button";
 import { User } from "@/types";
 import { toast } from "@/hooks/use-toast";
-import { blockUsers, deleteUsers, getUsers } from "@/lib/fetch";
+import { toggleUserStatus, deleteUsers, getUsers } from "@/lib/fetch";
 import { useAuthContext } from "@/context";
-import { useNavigate } from "react-router";
 
-interface DataTableProps {
+type DataTableProps = {
 	columns: ColumnDef<User>[];
 	data: User[];
 	setUsers: React.Dispatch<React.SetStateAction<User[]>>;
-}
+};
 
 export function DataTable({ columns, data, setUsers }: DataTableProps) {
 	const [sorting, setSorting] = useState<SortingState>([]);
 	const [rowSelection, setRowSelection] = useState({});
-	const { user } = useAuthContext();
-	const navigate = useNavigate();
+	const { user, handleLogOut } = useAuthContext();
 
 	const table = useReactTable<User>({
 		data,
@@ -54,24 +52,46 @@ export function DataTable({ columns, data, setUsers }: DataTableProps) {
 		return emailsList;
 	};
 
-	const handleBlockUsers = async () => {
-		try {
-			const emailsToBlock = getEmailsList();
-
-			const { success, message, status } = await blockUsers(
-				user!.email,
-				emailsToBlock
-			);
-
-			if (!success) {
-				toast({ description: message, variant: "destructive" });
-				if (status !== 200) navigate("/");
+	// Manages our data table and UI after our user has clicked block or delete
+	const handleResponse = async (
+		success: boolean,
+		message: string,
+		status: number
+	) => {
+		if (!success) {
+			// Status 401 means that our current user account has been blocked/deleted by someone else while we were still in the app.
+			if (status === 401) {
+				handleLogOut(message);
 				return;
 			}
 
-			toast({ description: message });
-			const { data } = await getUsers(user!.email);
-			setUsers(data);
+			// User didn't select any users or any other error goes here
+			toast({ description: message, variant: "destructive" });
+			return;
+		}
+
+		// Status 202 means our current user included himself in the block/delete list, therefore we must log him out.
+		if (status === 202) {
+			handleLogOut(message);
+			return;
+		}
+
+		// Update our table values
+		toast({ description: message });
+		const { data } = await getUsers();
+		setUsers(data);
+	};
+
+	const handleUserStatus = async () => {
+		try {
+			const emailsToUpdate = getEmailsList();
+
+			const { success, message, status } = await toggleUserStatus(
+				user!.email,
+				emailsToUpdate
+			);
+
+			handleResponse(success, message, status);
 		} catch (err) {
 			console.error(err);
 		}
@@ -86,15 +106,7 @@ export function DataTable({ columns, data, setUsers }: DataTableProps) {
 				emailsToDelete
 			);
 
-			if (!success) {
-				toast({ description: message, variant: "destructive" });
-				if (status !== 200) navigate("/");
-				return;
-			}
-
-			toast({ description: message });
-			const { data } = await getUsers(user!.email);
-			setUsers(data);
+			handleResponse(success, message, status);
 		} catch (err) {
 			console.error(err);
 		}
@@ -103,7 +115,7 @@ export function DataTable({ columns, data, setUsers }: DataTableProps) {
 	return (
 		<div>
 			<div className='flex gap-2'>
-				<Button onClick={handleBlockUsers}>Block Selected Users</Button>
+				<Button onClick={handleUserStatus}>Toggle Selected Users Status</Button>
 				<Button onClick={handleDeleteUsers}>Delete Selected Users</Button>
 			</div>
 			<div className='my-4'>
