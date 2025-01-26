@@ -2,35 +2,25 @@ import { DataTable } from "@/components/shared/DataTable";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuthContext } from "@/context";
-import { toast } from "@/hooks/use-toast";
 import { getUsers } from "@/lib/fetch";
 import { User } from "@/types";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
 
 const Dashboard = () => {
-	const { user } = useAuthContext();
-	const navigate = useNavigate();
+	const { user, handleLogOut } = useAuthContext();
 	const [users, setUsers] = useState<User[]>([]);
 
 	// Avoid any unlogged user access the dashboard
 	useEffect(() => {
-		if (!user || user.status === "BLOCKED") {
-			toast({ description: "Invalid user." });
-			navigate("/");
+		if (!user) {
+			handleLogOut("No user found.");
 			return;
 		}
 
 		async function fetchUsers() {
-			const { success, data, message } = await getUsers(user!.email);
-
-			if (!success) {
-				toast({ description: message });
-				navigate("/");
-				return;
-			}
+			const { data } = await getUsers();
 
 			setUsers(data);
 		}
@@ -94,7 +84,7 @@ const Dashboard = () => {
 			enableSorting: true,
 		},
 		{
-			accessorKey: "status",
+			accessorKey: "isActive",
 			header: ({ column }) => {
 				return (
 					<Button
@@ -107,19 +97,20 @@ const Dashboard = () => {
 					</Button>
 				);
 			},
+			cell: ({ row }) => {
+				return <p>{row.original.isActive ? "ACTIVE" : "BLOCKED"}</p>;
+			},
 			enableSorting: true,
 		},
 	];
-
-	const handleLogOut = () => {
-		navigate("/");
-	};
 
 	return (
 		<div className='flex flex-col align-center justify-center'>
 			<DataTable columns={columns} data={users} setUsers={setUsers} />
 
-			<Button className='w-fit' onClick={handleLogOut}>
+			<Button
+				className='w-fit'
+				onClick={() => handleLogOut("Logout successful.")}>
 				Log Out
 			</Button>
 		</div>
